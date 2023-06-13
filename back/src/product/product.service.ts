@@ -12,40 +12,55 @@ export class ProductService {
     private readonly productRepository: Repository<Product>,
   ) {}
 
-  async initializeProducts(): Promise<void> {
-    for (let year = 2000; year <= 2033; year++) {
-      const product = new Product();
-      product.aptId = 1101105;
-      product.year = year;
-      product.value = JSON.stringify(Array(12).fill(0));
-
-      try {
-        await this.productRepository.query(
-          'INSERT INTO products (id, apt_id, year, value) VALUES (DEFAULT,?, ?, ?)',
-          [product.aptId, product.year, product.value],
-        );
-      } catch (error) {
-        console.error(error);
+  async initializeProducts() {
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const product = await queryRunner.manager
+        .getRepository(Product)
+        .createQueryBuilder('product')
+        .where('product.id=:id', { id: 1 })
+        .getOne();
+      if (!product) {
+        for (let year = 2000; year <= 2033; year++) {
+          const product = new Product();
+          product.aptId = 1101105;
+          product.year = year;
+          product.value = JSON.stringify(Array(12).fill(0));
+          await this.productRepository.query(
+            'INSERT INTO products (id, apt_id, year, value) VALUES (DEFAULT,?, ?, ?)',
+            [product.aptId, product.year, product.value],
+          );
+        }
+        return JSON.stringify(Array(12).fill(0));
+      } else {
+        throw new BadRequestException('이미 생성했습니다');
       }
+    } catch (error) {
+      console.error(error);
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
 
-  async getHistoricalPrice(data: HistoricalPriceDto) {
+  async getHistoricalPrice(aptId: number, year: number) {
     const now = new Date();
-    const year = now.getFullYear();
-    if (year < data.year) throw new BadRequestException('잘못된 요청입니다.');
+    const currentYear = now.getFullYear();
+    if (currentYear < year) throw new BadRequestException('잘못된 요청입니다.');
     const month = now.getMonth() + 1;
     const queryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     const product = await queryRunner.manager
       .getRepository(Product)
       .createQueryBuilder('product')
-      .where('product.apt_id=:aptId', { aptId: data.aptId })
-      .andWhere('product.year=:year', { year: data.year })
+      .where('product.apt_id=:aptId', { aptId })
+      .andWhere('product.year=:year', { year })
       .getOne();
-    if (year > data.year) {
+    if (currentYear >= year) {
       return JSON.parse(product.value);
-    } else if (year === data.year) {
+    } else if (currentYear === year) {
       return JSON.parse(product.value).slice(0, month);
     } else {
       throw new BadRequestException('잘못된 요청입니다.');
@@ -53,31 +68,36 @@ export class ProductService {
   }
 
   async setHistoricalPrice(data: HistoricalPriceDto) {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    if (month < data.monthStart)
-      throw new BadRequestException('잘못된 요청입니다.');
     const queryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    const product = await queryRunner.manager
-      .getRepository(Product)
-      .createQueryBuilder('product')
-      .where('product.apt_id=:aptId', { aptId: data.aptId })
-      .andWhere('product.year=:year', { year: data.year })
-      .getOne();
 
-    const parsedValue = JSON.parse(product.value);
-    parsedValue[data.monthStart - 1] = data.value;
     try {
-      await dataSource
+      const product = await this.productRepository
+        .createQueryBuilder('product')
+        .where('product.aptId = :aptId', { aptId: +data.aptId })
+        .andWhere('product.year = :year', { year: +data.year })
+        .getOne();
+
+      const parsedValue = JSON.parse(product.value);
+      parsedValue[data.monthStart - 1] = +data.value;
+
+      await this.productRepository
         .createQueryBuilder()
         .update(Product)
         .set({ value: JSON.stringify(parsedValue) })
-        .where('apt_id = :aptId', { aptId: data.aptId })
-        .andWhere('year = :year', { year: data.year })
+        .where('aptId = :aptId', { aptId: +data.aptId })
+        .andWhere('year = :year', { year: +data.year })
         .execute();
+
+      const currentProduct = await this.productRepository
+        .createQueryBuilder('product')
+        .where('product.aptId = :aptId', { aptId: +data.aptId })
+        .andWhere('product.year = :year', { year: +data.year })
+        .getOne();
+
       await queryRunner.commitTransaction();
+      return JSON.parse(currentProduct.value);
     } catch (err) {
       console.log(err);
       await queryRunner.rollbackTransaction();
@@ -86,22 +106,22 @@ export class ProductService {
     }
   }
 
-  async getFuturePrice(data: FuturePriceDto) {
+  async getFuturePrice(aptId: number, year: number) {
     const now = new Date();
-    const year = now.getFullYear();
+    const currentYear = now.getFullYear();
     const month = now.getMonth() + 1;
-    if (year > data.year) throw new BadRequestException('잘못된 요청입니다.');
+    if (currentYear > year) throw new BadRequestException('잘못된 요청입니다.');
     const queryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     const product = await queryRunner.manager
       .getRepository(Product)
       .createQueryBuilder('product')
-      .where('product.apt_id=:aptId', { aptId: data.aptId })
-      .andWhere('product.year=:year', { year: data.year })
+      .where('product.apt_id=:aptId', { aptId })
+      .andWhere('product.year=:year', { year })
       .getOne();
-    if (year < data.year) {
+    if (currentYear <= year) {
       return JSON.parse(product.value);
-    } else if (year === data.year) {
+    } else if (currentYear === year) {
       return JSON.parse(product.value).slice(month, 12);
     } else {
       throw new BadRequestException('잘못된 요청입니다.');
@@ -109,31 +129,34 @@ export class ProductService {
   }
 
   async setFuturePrice(data: FuturePriceDto) {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    if (month >= data.monthStart)
-      throw new BadRequestException('잘못된 요청입니다.');
     const queryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    const product = await queryRunner.manager
-      .getRepository(Product)
-      .createQueryBuilder('product')
-      .where('product.apt_id=:aptId', { aptId: data.aptId })
-      .andWhere('product.year=:year', { year: data.year })
-      .getOne();
 
-    const parsedValue = JSON.parse(product.value);
-    parsedValue[data.monthStart - 1] = data.value;
     try {
-      await dataSource
+      const product = await this.productRepository
+        .createQueryBuilder('product')
+        .where('product.aptId = :aptId', { aptId: data.aptId })
+        .andWhere('product.year = :year', { year: data.year })
+        .getOne();
+
+      const parsedValue = JSON.parse(product.value);
+      parsedValue[data.monthStart - 1] = data.value;
+
+      await this.productRepository
         .createQueryBuilder()
         .update(Product)
         .set({ value: JSON.stringify(parsedValue) })
-        .where('apt_id = :aptId', { aptId: data.aptId })
+        .where('aptId = :aptId', { aptId: data.aptId })
         .andWhere('year = :year', { year: data.year })
         .execute();
+      const currentProduct = await this.productRepository
+        .createQueryBuilder('product')
+        .where('product.aptId = :aptId', { aptId: +data.aptId })
+        .andWhere('product.year = :year', { year: +data.year })
+        .getOne();
       await queryRunner.commitTransaction();
+      return JSON.parse(currentProduct.value);
     } catch (err) {
       console.log(err);
       await queryRunner.rollbackTransaction();

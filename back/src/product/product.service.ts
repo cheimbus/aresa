@@ -17,16 +17,12 @@ export class ProductService {
       const product = new Product();
       product.aptId = 1101105;
       product.year = year;
-      product.monthStart = 1;
-      product.monthEnd = 12;
-      product.value = JSON.stringify(
-        Array(product.monthEnd - product.monthStart + 1).fill(0),
-      );
+      product.value = JSON.stringify(Array(12).fill(0));
 
       try {
         await this.productRepository.query(
-          'INSERT INTO products (apt_id, year, month_start, month_end, value) VALUES (DEFAULT, ?, ?, ?, ?)',
-          [product.year, product.monthStart, product.monthEnd, product.value],
+          'INSERT INTO products (id, apt_id, year, value) VALUES (DEFAULT,?, ?, ?)',
+          [product.aptId, product.year, product.value],
         );
       } catch (error) {
         console.error(error);

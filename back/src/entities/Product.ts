@@ -13,8 +13,8 @@ export class Product {
   @Column({ type: 'int', name: 'month_end' })
   monthEnd: number;
 
-  @Column({ type: 'int', name: 'value' })
-  value: number[];
+  @Column({ type: 'text', name: 'value' })
+  value: string;
 }
 
 /**

@@ -1,5 +1,4 @@
 import { DataSource } from 'typeorm';
-import path from 'path';
 import { Product } from 'src/entities/Product';
 
 const dataSource = new DataSource({

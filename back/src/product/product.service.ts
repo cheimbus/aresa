@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from '../entities/Product';
 import { Repository } from 'typeorm';
 import dataSource from 'datasource';
+import { HistoricalPriceDto } from 'src/common/product.dto';
 
 @Injectable()
 export class ProductService {
@@ -33,7 +34,7 @@ export class ProductService {
     }
   }
 
-  async getHistoricalPrice(data) {
+  async getHistoricalPrice(data: HistoricalPriceDto) {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
@@ -42,13 +43,43 @@ export class ProductService {
     const product = await queryRunner.manager
       .getRepository(Product)
       .createQueryBuilder('product')
-      .where('product.apt_id=:aptId', { aptId: data.data.aptId })
-      .andWhere('product.year=:year', { year: data.data.year })
+      .where('product.apt_id=:aptId', { aptId: data.aptId })
+      .andWhere('product.year=:year', { year: data.year })
       .getOne();
-    if (year > data.data.year) {
+    if (year > data.year) {
       return JSON.parse(product.value);
-    } else if (year === data.data.year) {
+    } else if (year === data.year) {
       return JSON.parse(product.value).slice(0, month);
+    }
+  }
+
+  async setHistoricalPrice(data: HistoricalPriceDto) {
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    const product = await queryRunner.manager
+      .getRepository(Product)
+      .createQueryBuilder('product')
+      .where('product.apt_id=:aptId', { aptId: data.aptId })
+      .andWhere('product.year=:year', { year: data.year })
+      .getOne();
+
+    const parsedValue = JSON.parse(product.value);
+    parsedValue[data.monthStart - 1] = data.value;
+    try {
+      await dataSource
+        .createQueryBuilder()
+        .update(Product)
+        .set({ value: JSON.stringify(parsedValue) })
+        .where('apt_id = :aptId', { aptId: data.aptId })
+        .andWhere('year = :year', { year: data.year })
+        .execute();
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      console.log(err);
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
   }
 }

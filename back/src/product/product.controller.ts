@@ -13,7 +13,11 @@ export class ProductController {
 
   @Get('historical_price')
   async getHistoricalPrice(@Body() data: HistoricalPriceDto) {
-    console.log(data);
-    return await this.productService.getHistoricalPrice({ data });
+    return await this.productService.getHistoricalPrice(data);
+  }
+
+  @Post('historical_price')
+  async setHistoricalPrice(@Body() data: HistoricalPriceDto) {
+    return await this.productService.setHistoricalPrice(data);
   }
 }

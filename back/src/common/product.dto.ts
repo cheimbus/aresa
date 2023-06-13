@@ -3,4 +3,5 @@ export interface HistoricalPriceDto {
   year: number;
   monthStart: number;
   monthEnd: number;
+  value: number;
 }

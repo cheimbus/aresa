@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { HistoricalPriceDto } from 'src/common/product.dto';
+import { FuturePriceDto, HistoricalPriceDto } from 'src/common/product.dto';
 import { ProductService } from './product.service';
 
 @Controller('aresa-api')
@@ -19,5 +19,15 @@ export class ProductController {
   @Post('historical_price')
   async setHistoricalPrice(@Body() data: HistoricalPriceDto) {
     return await this.productService.setHistoricalPrice(data);
+  }
+
+  @Get('future_price')
+  async getFuturePrice(@Body() data: FuturePriceDto) {
+    return await this.productService.getFuturePrice(data);
+  }
+
+  @Post('future_price')
+  async setFuturePrice(@Body() data: HistoricalPriceDto) {
+    return await this.productService.setFuturePrice(data);
   }
 }

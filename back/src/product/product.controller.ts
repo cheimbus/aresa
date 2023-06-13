@@ -35,6 +35,7 @@ export class ProductController {
 
   @Post('future_price')
   async setFuturePrice(@Body() data: FuturePriceDto) {
+    console.log(data);
     return await this.productService.setFuturePrice(data);
   }
 }

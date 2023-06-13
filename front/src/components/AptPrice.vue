@@ -102,7 +102,7 @@ export default {
         const body = {
           aptId: 1101105,
           year: this.selectedYear,
-          monthStart: this.selectedMonth + 1,
+          month: this.selectedMonth + 1,
           value: this.value
         };
         const response = await fetch(`http://localhost:3000/aresa-api/historical_price`, {
@@ -112,7 +112,7 @@ export default {
           },
           body: JSON.stringify(body)
         });
-
+        
         if (response.ok) {
           const data = await response.json();
           this.prices = data;
@@ -120,6 +120,39 @@ export default {
           localStorage.setItem('selectedYear', this.selectedYear);
         } else {
           console.error('Error: Invalid response');
+        }
+        this.setFuturePrice();
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async setFuturePrice() {
+      try {
+        if (this.selectedYear > new Date().getFullYear()) {
+          const body = {
+            aptId: 1101105,
+            year: this.selectedYear,
+            monthStart: this.selectedMonth + 1,
+            value: this.value
+          };
+          console.log(body)
+          const response = await fetch(`http://localhost:3000/aresa-api/future_price`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+          });
+          console.log(response)
+
+          if (response.ok) {
+            const data = await response.json();
+            this.prices = data;
+            localStorage.setItem('prices', JSON.stringify(data));
+            localStorage.setItem('selectedYear', this.selectedYear);
+          } else {
+            console.error('Error: Invalid response');
+          }
         }
       } catch (error) {
         console.error(error);

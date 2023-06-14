@@ -71,7 +71,6 @@ export class ProductService {
     const queryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       const product = await this.productRepository
         .createQueryBuilder('product')
@@ -95,7 +94,6 @@ export class ProductService {
         .where('product.aptId = :aptId', { aptId: +data.aptId })
         .andWhere('product.year = :year', { year: +data.year })
         .getOne();
-
       await queryRunner.commitTransaction();
       return JSON.parse(currentProduct.value);
     } catch (err) {

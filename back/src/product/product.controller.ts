@@ -21,7 +21,6 @@ export class ProductController {
 
   @Post('historical_price')
   async setHistoricalPrice(@Body() data: HistoricalPriceDto) {
-    console.log(data, '@1');
     return await this.productService.setHistoricalPrice(data);
   }
 
@@ -35,7 +34,6 @@ export class ProductController {
 
   @Post('future_price')
   async setFuturePrice(@Body() data: FuturePriceDto) {
-    console.log(data);
     return await this.productService.setFuturePrice(data);
   }
 }

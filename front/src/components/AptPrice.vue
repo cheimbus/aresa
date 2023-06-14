@@ -22,8 +22,16 @@
       <div class="chart">
         <div class="line" style="top: 50%;"></div>
         <div class="dots">
-          <div v-for="(price, index) in prices" :key="index" class="dot" :style="{ left: `${index * (1000 / (prices.length - 1))}px`, top: '50%' }">
-            <span class="dot-label" style="top: 20px;">{{ price }}억원</span>
+          <div
+            v-for="(price, index) in prices"
+            :key="index"
+            class="dot"
+            :style="{
+              left: `${index * (1000 / (prices.length - 1))}px`,
+              top: `${50 - price * 3}px`
+            }"
+          >
+            <span class="dot-label">{{ price }}억원</span>
           </div>
         </div>
       </div>
@@ -102,7 +110,7 @@ export default {
         const body = {
           aptId: 1101105,
           year: this.selectedYear,
-          month: this.selectedMonth + 1,
+          monthStart: this.selectedMonth + 1,
           value: this.value
         };
         const response = await fetch(`http://localhost:3000/aresa-api/historical_price`, {
@@ -135,7 +143,6 @@ export default {
             monthStart: this.selectedMonth + 1,
             value: this.value
           };
-          console.log(body)
           const response = await fetch(`http://localhost:3000/aresa-api/future_price`, {
             method: 'POST',
             headers: {
@@ -143,7 +150,6 @@ export default {
             },
             body: JSON.stringify(body)
           });
-          console.log(response)
 
           if (response.ok) {
             const data = await response.json();
@@ -211,41 +217,23 @@ export default {
   height: 500px;
   width: 1000px;
   border: 1px solid #ccc;
-  margin-top: 20px;
-}
-
-.line {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: #000;
-}
-
-.dots {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
+  margin-top: 50px;
 }
 
 .dot {
   position: absolute;
-  top: 50%;
+  top: 10%;
   transform: translate(-50%, -50%);
-  height: 12px;
-  width: 12px;
+  height: 10px;
+  width: 10px;
   background-color: #000;
-  border-radius: 50%;
+  border-radius: 5px;
+  margin-top: 450px;
 }
 
 .dot-label {
   position: absolute;
-  top: 20px;
+  top: 30px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 12px;
@@ -255,7 +243,9 @@ export default {
 .price-list {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 100px;
+  font-size: 0px;
+  font-weight: bold;
 }
 
 .price-item {
@@ -267,14 +257,10 @@ export default {
 
 .price-label {
   margin-right: 5px;
+  margin-top: 1px;
 }
 
 .month-label {
   margin-left: 5px;
 }
 </style>
-
-
-
-
-

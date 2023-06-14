@@ -42,30 +42,33 @@ npm run start
 ## 3. 예제 실행 Step 별 화면 변경사항
 ### DB 에 아무 정보 없을 때 화면
 > 클라이언트와 서버가 실행이되면 자동적으로 데이터베이스에 2000년부터 2033년도까지의 가격이 0으로 초기화됩니다.
-<img width="1000" alt="스크린샷 2023-06-14 오전 3 55 35" src="https://github.com/cheimbus/aresa/assets/87293880/256a6069-4a57-4ca2-90b9-2313faabaeb6">
+<img width="1000" alt="스크린샷 2023-06-14 오후 4 03 47" src="https://github.com/cheimbus/aresa/assets/87293880/b9925ecf-6e72-456a-8101-9b558473ca56">
+
 
 ### POST historical_price 에 임의의 값 post
 - post curl 커멘드
 ```shell
 curl -X POST -H "Content-Type: application/json" -d '{
   "aptId": 1101105,
-  "year": 2023,
+  "year": 2021,
   "monthStart": 3,
-  "value": 10
+  "value": 50
 }' http://localhost:3000/aresa-api/historical_price
 ```
 - post 이후 새로고침 화면
-<img width="1000" alt="스크린샷 2023-06-14 오전 4 19 51" src="https://github.com/cheimbus/aresa/assets/87293880/a5c339d2-cbf5-454b-a90b-6b5006e2d7d4">
+<img width="1000" alt="스크린샷 2023-06-14 오후 4 08 37" src="https://github.com/cheimbus/aresa/assets/87293880/8cea7e71-c3a6-44cb-9588-531df2b0a5e1">
+
 
 ### POST futurel_price 에 임의의 값 post
 - post curl 커멘드
 ```shell
 curl -X POST -H "Content-Type: application/json" -d '{
   "aptId": 1101105,
-  "year": 2030,
-  "monthStart": 6,
+  "year": 2027,
+  "monthStart": 7,
   "value": 100
 }' http://localhost:3000/aresa-api/future_price
 ```
 - post 이후 새로고침 화면
-<img width="1000" alt="스크린샷 2023-06-14 오전 4 36 26" src="https://github.com/cheimbus/aresa/assets/87293880/7e9e34e7-831c-4fde-ab98-f922e5546170">
+<img width="1000" alt="스크린샷 2023-06-14 오후 4 09 16" src="https://github.com/cheimbus/aresa/assets/87293880/5e09240a-8044-4ebf-b1ca-e8b4b45b78cc">
+
